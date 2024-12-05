@@ -119,13 +119,190 @@ except Exception as e:
 ```
 
 #### 3. Translating the Text
-You can see the translated text below. I do speak both English and Hungarian, so I checked the correctness of the translation. As the people in the video are not giving a prepared speech, the translation is a little fragmented. Sometimes it combines into one sentence what the interviewers say and what the politicians respond to. As there are many interviewers, the questions are not understandable quite often. It also makes it a little bit hard to read the text because sometimes the interviewers don’t let the politicians complete their sentences. However, even apart from these mistakes, which are due to the quality of the video, there are some clear translation mistakes. For example, in the video, they say that “Trump was teasing us,” and it was translated as “scared us.” Another mistranslation was “No one had pillows.” He either meant that “no one had pens for taking notes” or he meant “no one had pads” (like iPads). To be fair, I am not sure that someone only reading the text below would fully understand the context.
+You can see the translated text through the [link](https://raw.githubusercontent.com/gretazsikla/Data_Engineering2_Cloud_computing/refs/heads/main/Homework3/translated_text.txt)
+. I do speak both English and Hungarian, so I checked the correctness of the translation. As the people in the video are not giving a prepared speech, the translation is a little fragmented. Sometimes it combines into one sentence what the interviewers say and what the politicians respond to. As there are many interviewers, the questions are not understandable quite often. It also makes it a little bit hard to read the text because sometimes the interviewers don’t let the politicians complete their sentences. However, even apart from these mistakes, which are due to the quality of the video, there are some clear translation mistakes. For example, in the video, they say that “Trump was teasing us,” and it was translated as “scared us.” Another mistranslation was “No one had pillows.” He either meant that “no one had pens for taking notes” or he meant “no one had pads” (like iPads). To be fair, I am not sure that someone only reading the text below would fully understand the context.
+
+```python
+translate = boto3.client("translate")
+S3_BUCKET = 'name' 
+S3_KEY = "speech_text.txt"
+
+print("\n📂 Text location:")
+print(f"- Bucket: {S3_BUCKET}")
+print(f"- Key: {S3_KEY}")
+
+try:
+    s3_response = s3.get_object(Bucket=S3_BUCKET, Key=S3_KEY)
+    text_to_translate = s3_response['Body'].read().decode('utf-8')
+    translate_response = translate.translate_text(
+        Text=text_to_translate, SourceLanguageCode="en",
+        TargetLanguageCode="hu"
+    )
+    translated_text = translate_response['TranslatedText']
+
+    # Save the translated text to a file
+    with open("translated_text.txt", "w", encoding="utf-8") as file:
+        file.write(translated_text)
+
+    print("\n✅ Translate analysis complete!")
+
+    print("\n📦 Raw response from AWS:")
+    pp.pprint(translate_response)
+
+except Exception as e:
+    print(f"❌ Error translating: {str(e)}")
+```
 
 #### 4. Celebrity Recognition Through Pictures
-At first, I didn’t see that there is an option for video celebrity recognition, so I took pictures of the people in the video and made celebrity recognition based on the pictures. Truth be told, in the video, there is some text explaining who the politicians are, but I think there could be cases when it is not accurate. Out of 4 people, it recognized 3 people well, which is 75% accuracy. The program didn’t recognize Arif Rivani, the Minister of Justice and Attorney General of Canada. The program said it is Carlos Mena, a Spanish singer, with 76% confidence. The program recognized everyone else with 99-100% confidence.
+At first, I didn’t see that there is an option for video celebrity recognition, so I took pictures of the people in the video and made celebrity recognition based on the pictures. Truth be told, in the video, there is some text explaining who the politicians are, but I think there could be cases when it is not accurate. Out of 4 people, it recognized 3 people well, which is 75% accuracy. The program didn’t recognize Arif Rivani, the Minister of Justice and Attorney General of Canada. The program said it is Carlos Mena, a Spanish singer, with 76% confidence. The program recognized everyone else with 99-100% confidence. The program also gave information about their facial experssion. You can see the main results below.
+
+```python
+# Analyze image for celebrity detection
+print("🔍 Analyzing image for celebrities...")
+import boto3
+rekognition = boto3.client("rekognition")
+
+S3_BUCKET = "name"
+S3_KEY = "pol1.PNG"
+
+print("\n📂 Image location:")
+print(f"- Bucket: {S3_BUCKET}")
+print(f"- Key: {S3_KEY}")
+
+try:
+    celebrity_response = rekognition.recognize_celebrities(
+        Image={
+            "S3Object": {
+                "Bucket": S3_BUCKET,
+                "Name": S3_KEY,
+            }
+        }
+    )
+
+    print("\n✅ Image analysis complete!")
+    print(f"Found {len(celebrity_response['CelebrityFaces'])} celebrities")
+
+    print("\n📦 Raw response from AWS:")
+    pp.pprint(celebrity_response)
+    celebrity_name = celebrity_response['CelebrityFaces'][0]['Celebrity']['Name']
+    print(f"Recognized celebrity: {celebrity_name}")
+
+except Exception as e:
+    print(f"❌ Error analyzing image: {str(e)}")
+
+try:
+    if not celebrity_response["CelebrityFaces"]:
+        print("No celebrities detected in the image.")
+    else:
+        for i, celebrity in enumerate(celebrity_response["CelebrityFaces"], 1):
+            print(f"\n🌟 Celebrity {i}:")
+            print(f"Name: {celebrity['Name']}")
+            print(f"Confidence: {celebrity['MatchConfidence']:.2f}%")
+            print("\nReference URLs:")
+            for url in celebrity["Urls"]:
+                print(f"- https://{url}")
+
+            # Print face details if available
+            if "Face" in celebrity:
+                print("\nFace Details:")
+                face = celebrity["Face"]
+                emotions = face.get("Emotions", [])
+                if emotions:
+                    top_emotion = emotions[0]  # Emotions are returned sorted by confidence
+                    print(f"- Top emotion: {top_emotion['Type']} ({top_emotion['Confidence']:.1f}%)")
+
+            print("-" * 40)
+
+except Exception as e:
+    print(f"❌ Error processing results: {str(e)}")
+```
+
+| Name                     | Confidence   | Top Emotion | Top Emotion confidence % |
+|--------------------------|--------------|-------------|---------------|
+| Dominic LeBlanc           | 99.99%       | CALM        | 58.9%         |
+| Carlos Mena               | 76.62%       | CALM        | 56.3%         |
+| François-Philippe Champagne | 100.00%      | SURPRISED   | 94.1%         |
+| Jean-Yves Duclos           | 100.00%      | CALM        | 94.5%         |
+
+
 
 #### 5. Celebrity Recognition Through Video
 I had the preconception that through the video, it would give a better result for Arif Rivani. It gave a different answer, but still not the correct answer. The program thought it was Xavier García Albiol. At different moments of the video, the program had different confidence levels, but it was between 77-90%. The program was right about the other politicians.
+
+```python
+try:
+    # Start celebrity recognition job
+    response = rekognition.start_celebrity_recognition(
+        Video={
+            "S3Object": {
+                "Bucket": S3_BUCKET,
+                "Name": S3_KEY,
+            }
+        }
+    )
+
+    job_id = response['JobId']
+    print(f"\n🚀 Job started! Job ID: {job_id}")
+
+    # Wait for job completion
+    print("⏳ Waiting for the celebrity recognition job to complete...")
+    while True:
+        status_response = rekognition.get_celebrity_recognition(JobId=job_id)
+        status = status_response['JobStatus']
+        if status in ['SUCCEEDED', 'FAILED']:
+            break
+        time.sleep(10)
+
+    if status == 'SUCCEEDED':
+        print("\n✅ Video analysis complete!")
+
+        print("\n📦 Raw response from AWS:")
+        pp.pprint(status_response)
+
+        print("\n📋 Recognized celebrities:")
+        for celeb in status_response['Celebrities']:
+            name = celeb['Celebrity']['Name']
+            timestamp = celeb['Timestamp']
+            print(f"- {name} at {timestamp}ms")
+    else:
+        print("\n❌ Video analysis failed.")
+
+except Exception as e:
+    print(f"❌ Error analyzing video: {str(e)}")
+
+try:
+    if not status_response["Celebrities"]:
+        print("No celebrities detected in the video.")
+    else:
+        print("\n🌟 Detected Celebrities:")
+        for i, celebrity_info in enumerate(status_response["Celebrities"], 1):
+            celebrity = celebrity_info["Celebrity"]
+            timestamp = celebrity_info["Timestamp"]
+
+            print(f"\n🌟 Celebrity {i}:")
+            print(f"Name: {celebrity['Name']}")
+            print(f"Confidence: {celebrity['Confidence']:.2f}%")
+            print(f"Detected at: {timestamp} ms")
+
+            # Print reference URLs
+            print("\nReference URLs:")
+            for url in celebrity.get("Urls", []):
+                print(f"- {url}")
+
+            # Print additional face details if available
+            if "Face" in celebrity:
+                face = celebrity["Face"]
+                emotions = face.get("Emotions", [])
+                if emotions:
+                    top_emotion = emotions[0]  # Emotions are returned sorted by confidence
+                    print(f"\nFace Details:")
+                    print(f"- Top emotion: {top_emotion['Type']} ({top_emotion['Confidence']:.1f}%)")
+
+            print("-" * 40)
+
+except Exception as e:
+    print(f"❌ Error processing results: {str(e)}")
+```
 
 ### Cost Analysis
 
