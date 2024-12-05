@@ -81,6 +81,7 @@ except Exception as e:
 #### 2. Sentiment Analysis on the Text
 It wasn’t strictly necessary for the goal of the analysis, but I thought it would be interesting to check what AI thinks about the mood of the text. I originally wanted to do it on the translated text, but sentiment analysis is not yet available in Hungarian. You can see the code below as well as the output of the sentiment analysis. In my opinion, the analysis was mostly good. I consider the interviews to be positive as well, with a slight tone of defensiveness.
 
+![picture](pie.png)
 
 
 ```python
