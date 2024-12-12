@@ -4,7 +4,7 @@ In this blog post, I would like to explore a real-world topic. In my experience,
 
 ## Video Analysis: Global News - "Trump Suggests Canada Could Become 51st State"
 
-For the demonstration of the tools, I used a [video](https://www.youtube.com/watch?v=UUJqLwxp-vE) published on the 3rd of December by Global News. The backstory of this video is that recently Donald Trump was elected president of the United States, and during a dinner at Mar-a-Lago over the weekend, he suggested that Canada could become the United States' 51st state and that Prime Minister Justin Trudeau would become its governor. In the video, journalists ask Canadian politicians for their opinions about this statement.
+For the demonstration of the tools, I used a [video](https://www.youtube.com/watch?v=UUJqLwxp-vE) published on the 3rd of December by Global News. The backstory of this video is that recently Donald Trump became president of the United States, and during a dinner at Mar-a-Lago over the weekend, he suggested that Canada could become the United States' 51st state and that Prime Minister Justin Trudeau would become its governor. In the video, journalists ask Canadian politicians for their opinions about this statement.
 
 ### Steps of the Analysis
 
